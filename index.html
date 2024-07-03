@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoElectric Snake</title>
+    <style>
+        body { display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #000; margin: 0; }
+        canvas { background-color: #000; }
+        .score-board, .game-over, .start-screen {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: white; font-family: Arial, sans-serif; text-align: center;
+        }
+        .score-board { top: 10px; left: 10px; transform: none; font-size: 20px; }
+        .start-screen, .game-over { font-size: 30px; display: none; }
+        .start-screen button, .game-over button { margin: 5px; padding: 10px; font-size: 20px; }
+        .skins { display: flex; justify-content: center; margin-top: 20px; }
+        .skin { width: 50px; height: 50px; margin: 5px; border: 2px solid white; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="score-board">Score: <span id="score">0</span> | Best Score: <span id="best-score">0</span></div>
+    <div class="start-screen">
+        <div>Select your snake color:</div>
+        <div class="skins">
+            <div class="skin" style="background-color: green;" data-color="green"></div>
+            <div class="skin" style="background-color: blue;" data-color="blue"></div>
+            <div class="skin" style="background-color: yellow;" data-color="yellow"></div>
+            <div class="skin" style="background-color: purple;" data-color="purple"></div>
+        </div>
+        <button onclick="startGame()">Start Game</button>
+    </div>
+    <div class="game-over">
+        <div>Game Over!</div>
+        <button onclick="restartGame()">Replay</button>
+        <button onclick="goHome()">Home</button>
+    </div>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const grid = 20;
+        let snake = [{x: 160, y: 160}];
+        let dx = grid, dy = 0;
+        let apple = {x: 320, y: 320};
+        let score = 0, bestScore = localStorage.getItem('bestScore') || 0;
+        let gameRunning = false;
+        let snakeColor = 'green';
+        document.getElementById('best-score').textContent = bestScore;
+
+        const startScreen = document.querySelector('.start-screen');
+        const gameOverScreen = document.querySelector('.game-over');
+
+        document.querySelectorAll('.skin').forEach(skin => {
+            skin.addEventListener('click', () => {
+                snakeColor = skin.getAttribute('data-color');
+                document.querySelectorAll('.skin').forEach(s => s.style.border = '2px solid white');
+                skin.style.border = '2px solid yellow';
+            });
+        });
+
+        function drawRect(x, y, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, grid - 1, grid - 1);
+        }
+
+        function getRandomGridPosition() {
+            return Math.floor(Math.random() * (canvas.width / grid)) * grid;
+        }
+
+        function placeApple() {
+            apple.x = getRandomGridPosition();
+            apple.y = getRandomGridPosition();
+        }
+
+        function moveSnake() {
+            const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+            snake.unshift(head);
+            if (head.x === apple.x && head.y === apple.y) {
+                score += 10;
+                if (score > bestScore) {
+                    bestScore = score;
+                    localStorage.setItem('bestScore', bestScore);
+                }
+                document.getElementById('score').textContent = score;
+                document.getElementById('best-score').textContent = bestScore;
+                placeApple();
+            } else {
+                snake.pop();
+            }
+        }
+
+        function isCollision() {
+            const head = snake[0];
+            for (let i = 4; i < snake.length; i++) {
+                if (head.x === snake[i].x && head.y === snake[i].y) return true;
+            }
+            return head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height;
+        }
+
+        function resetGame() {
+            snake = [{x: 160, y: 160}];
+            dx = grid;
+            dy = 0;
+            score = 0;
+            document.getElementById('score').textContent = score;
+            placeApple();
+            gameRunning = true;
+            gameOverScreen.style.display = 'none';
+            startScreen.style.display = 'none';
+        }
+
+        function gameLoop() {
+            if (!gameRunning) return;
+
+            if (isCollision()) {
+                gameRunning = false;
+                gameOverScreen.style.display = 'block';
+                return;
+            }
+            setTimeout(() => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                moveSnake();
+                drawRect(apple.x, apple.y, 'red');
+                snake.forEach(segment => drawRect(segment.x, segment.y, snakeColor));
+                requestAnimationFrame(gameLoop);
+            }, 100);
+        }
+
+        function startGame() {
+            startScreen.style.display = 'none';
+            resetGame();
+            gameLoop();
+        }
+
+        function restartGame() {
+            gameOverScreen.style.display = 'none';
+            resetGame();
+            gameLoop();
+        }
+
+        function goHome() {
+            gameOverScreen.style.display = 'none';
+            startScreen.style.display = 'block';
+        }
+
+        document.addEventListener('touchstart', e => {
+            if (!gameRunning) return;
+
+            const touch = e.touches[0];
+            const touchX = touch.clientX;
+            const touchY = touch.clientY;
+            if (Math.abs(touchX - snake[0].x) > Math.abs(touchY - snake[0].y)) {
+                if (touchX < snake[0].x && dx === 0) { dx = -grid; dy = 0; }
+                if (touchX > snake[0].x && dx === 0) { dx = grid; dy = 0; }
+            } else {
+                if (touchY < snake[0].y && dy === 0) { dy = -grid; dx = 0; }
+                if (touchY > snake[0].y && dy === 0) { dy = grid; dx = 0; }
+            }
+        });
+
+        placeApple();
+        startScreen.style.display = 'block';
+    </script>
+</body>
+</html>
