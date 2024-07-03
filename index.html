@@ -5,22 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GoElectric Snake</title>
     <style>
-        body { display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #000; margin: 0; }
-        canvas { background-color: #000; }
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        body { display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #222; margin: 0; }
+        canvas { background-color: #000; border: 2px solid #444; }
         .score-board, .game-over, .start-screen {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            color: white; font-family: Arial, sans-serif; text-align: center;
+            color: white; font-family: 'Press Start 2P', cursive; text-align: center;
         }
         .score-board { top: 10px; left: 10px; transform: none; font-size: 20px; }
-        .start-screen, .game-over { font-size: 30px; display: none; }
-        .start-screen button, .game-over button { margin: 5px; padding: 10px; font-size: 20px; }
+        .start-screen, .game-over { font-size: 20px; display: none; }
+        .start-screen button, .game-over button { margin: 5px; padding: 10px; font-size: 20px; cursor: pointer; }
+        .start-screen h1 { font-size: 40px; margin-bottom: 20px; }
         .skins { display: flex; justify-content: center; margin-top: 20px; }
         .skin { width: 50px; height: 50px; margin: 5px; border: 2px solid white; cursor: pointer; }
+        .skin.selected { border-color: yellow; }
     </style>
 </head>
 <body>
     <div class="score-board">Score: <span id="score">0</span> | Best Score: <span id="best-score">0</span></div>
     <div class="start-screen">
+        <h1>GoElectric Snake</h1>
         <div>Select your snake color:</div>
         <div class="skins">
             <div class="skin" style="background-color: green;" data-color="green"></div>
@@ -54,8 +58,8 @@
         document.querySelectorAll('.skin').forEach(skin => {
             skin.addEventListener('click', () => {
                 snakeColor = skin.getAttribute('data-color');
-                document.querySelectorAll('.skin').forEach(s => s.style.border = '2px solid white');
-                skin.style.border = '2px solid yellow';
+                document.querySelectorAll('.skin').forEach(s => s.classList.remove('selected'));
+                skin.classList.add('selected');
             });
         });
 
